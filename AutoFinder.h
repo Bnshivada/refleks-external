@@ -116,7 +116,30 @@ public:
     }
 
     // ----------------------------------------------------------------
-    //  Değer yazma (No Damage, RPM Boost için)
+    //  YENİ: Yakıt max kapasitesi oku
+    //  Tank boyutu truca göre değişir (300-1000L arası)
+    // ----------------------------------------------------------------
+    float ReadFuelMax() {
+        uintptr_t truck = GetTruckObject();
+        if (!truck) return 400.f;  // bağlanamadıysa default 400L döndür
+        float val = 0.f;
+        ReadProcessMemory(hProcess, (LPCVOID)(truck + 0x254), &val, 4, nullptr);
+        return (val > 0.f && val < 5000.f) ? val : 400.f;  // saçma değer gelirse default
+    }
+
+    // ----------------------------------------------------------------
+    //  YENİ: Motor durumu oku (true = açık, false = kapalı)
+    // ----------------------------------------------------------------
+    bool ReadEngineOn() {
+        uintptr_t truck = GetTruckObject();
+        if (!truck) return false;
+        bool val = false;
+        ReadProcessMemory(hProcess, (LPCVOID)(truck + 0x188), &val, 1, nullptr);
+        return val;
+    }
+
+    // ----------------------------------------------------------------
+    //  Değer yazma fonksiyonları
     // ----------------------------------------------------------------
     void WriteNoDamage() {
         uintptr_t truck = GetTruckObject();
@@ -132,8 +155,17 @@ public:
     }
 
     // ----------------------------------------------------------------
+    //  YENİ: Yakıt yaz (Fuel Freeze için)
+    //  Örnek: WriteFuel(380.f) → tankı 380L'ye set et
+    // ----------------------------------------------------------------
+    void WriteFuel(float amount) {
+        uintptr_t truck = GetTruckObject();
+        if (!truck) return;
+        WriteProcessMemory(hProcess, (LPVOID)(truck + 0x250), &amount, 4, nullptr);
+    }
+
+    // ----------------------------------------------------------------
     //  Oyun güncellemesi gelince yeniden tara
-    //  Pattern değişirse bu fonksiyon false döner → log'a yaz
     // ----------------------------------------------------------------
     bool Rescan() {
         std::cout << "[AutoFinder] Yeniden taranıyor...\n";
