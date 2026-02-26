@@ -1,0 +1,78 @@
+# ================================================
+#   REFLEKS EXTERNAL — GitHub Actions Auto-Build
+#   Her commit'te tetiklenir
+#   Çıktı: RefleksExternal.exe (artifact olarak)
+# ================================================
+
+name: Build Refleks External
+
+on:
+  push:
+    branches: [ "**" ]   # Her branch'e push'ta çalış
+
+jobs:
+  build:
+    name: Windows x64 Release Build
+    runs-on: windows-latest   # GitHub'ın Windows sunucusu
+
+    steps:
+
+      # ------------------------------------------------
+      # 1. Repoyu çek
+      # ------------------------------------------------
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------
+      # 2. ImGui'yi indir (ocornut/imgui reposundan)
+      #    Bunu repona commit etmek zorunda değilsin,
+      #    Actions her seferinde çeker.
+      # ------------------------------------------------
+      - name: Download ImGui
+        run: |
+          git clone --depth 1 https://github.com/ocornut/imgui.git imgui_repo
+
+          # Sadece gerekli dosyaları al
+          New-Item -ItemType Directory -Force -Path imgui
+          Copy-Item imgui_repo/imgui.h              imgui/
+          Copy-Item imgui_repo/imgui.cpp            imgui/
+          Copy-Item imgui_repo/imgui_draw.cpp       imgui/
+          Copy-Item imgui_repo/imgui_tables.cpp     imgui/
+          Copy-Item imgui_repo/imgui_widgets.cpp    imgui/
+          Copy-Item imgui_repo/imgui_internal.h     imgui/
+          Copy-Item imgui_repo/imconfig.h           imgui/
+          Copy-Item imgui_repo/imstb_rectpack.h     imgui/
+          Copy-Item imgui_repo/imstb_textedit.h     imgui/
+          Copy-Item imgui_repo/imstb_truetype.h     imgui/
+          Copy-Item imgui_repo/backends/imgui_impl_win32.h   imgui/
+          Copy-Item imgui_repo/backends/imgui_impl_win32.cpp imgui/
+          Copy-Item imgui_repo/backends/imgui_impl_dx11.h    imgui/
+          Copy-Item imgui_repo/backends/imgui_impl_dx11.cpp  imgui/
+        shell: pwsh
+
+      # ------------------------------------------------
+      # 3. CMake ile yapılandır
+      # ------------------------------------------------
+      - name: Configure CMake
+        run: |
+          cmake -B build -G "Visual Studio 17 2022" -A x64
+        shell: pwsh
+
+      # ------------------------------------------------
+      # 4. Derle (Release modu)
+      # ------------------------------------------------
+      - name: Build
+        run: |
+          cmake --build build --config Release
+        shell: pwsh
+
+      # ------------------------------------------------
+      # 5. .exe dosyasını artifact olarak yükle
+      #    Actions sekmesinden indirebilirsin
+      # ------------------------------------------------
+      - name: Upload EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RefleksExternal-${{ github.sha }}   # commit hash ile isimlendir
+          path: build/Release/RefleksExternal.exe
+          retention-days: 30   # 30 gün sonra silinir
