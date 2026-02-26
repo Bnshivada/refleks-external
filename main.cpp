@@ -3,6 +3,7 @@
 //  ETS2 1.58 | ImGui Overlay | Pattern Scanner
 //  
 //  DERLEME:
+
 //  - Visual Studio 2022 x64
 //  - DirectX 11 SDK
 //  - imgui/ klasörüne ImGui dosyalarını koy
